@@ -1,0 +1,29 @@
+name: Docker CI
+
+# 1. Quando esse robô acorda?
+# Sempre que houver um push para a branch 'main' ou um Pull Request.
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# 2. O que ele vai fazer?
+jobs:
+  build-and-test:
+    # Ele vai rodar numa máquina Ubuntu da própria Microsoft/GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo A: Baixar seu código nessa máquina virtual
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # Passo B: Tentar construir a imagem Docker Otimizada
+      # Se o seu Dockerfile tiver erro, vai falhar aqui.
+      - name: Build da Imagem Docker
+        run: docker build -t minha-api-teste .
+
+      # Passo C: Validar se a imagem ficou pequena mesmo (Opcional, mas legal pra ver no log)
+      - name: Verificar tamanho da imagem
+        run: docker images
