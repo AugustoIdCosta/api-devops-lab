@@ -1,0 +1,29 @@
+services:
+  # Nossa API (Front de batalha)
+  minha-api:
+    build: .
+    ports:
+      - "8080:5000"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_DEBUG=1
+      # AQUI ESTÁ O SEGREDO: O host é o NOME do serviço abaixo ('db')
+      - DATABASE_URL=postgresql://usuario:senha_secreta@db:5432/meubanco
+    depends_on:
+      - db
+
+  # O Banco de Dados (Backstage)
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: senha_secreta
+      POSTGRES_DB: meubanco
+    # Persistência real: salva os dados num volume do Docker (não perde ao reiniciar)
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+# Declaração do volume
+volumes:
+  postgres-data:
