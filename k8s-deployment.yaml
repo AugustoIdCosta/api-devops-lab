@@ -1,0 +1,80 @@
+# 1. O Banco de Dados
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_USER
+          value: "usuario"
+        - name: POSTGRES_PASSWORD
+          value: "senha_secreta"
+        - name: POSTGRES_DB
+          value: "meubanco"
+---
+# 2. O Serviço do Banco (Para a API achar ele)
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  selector:
+    app: db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+# 3. A Sua API (Sentinel)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentinel-api
+spec:
+  replicas: 2  # Vamos rodar 2 cópias para aguentar tráfego!
+  selector:
+    matchLabels:
+      app: sentinel
+  template:
+    metadata:
+      labels:
+        app: sentinel
+    spec:
+      containers:
+      - name: api
+        # IMPORTANTE: Aqui vai o seu usuário do Docker Hub
+        image: augustodockers/minha-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DATABASE_URL
+          # Note que o host é 'db', o nome do Service acima
+          value: "postgresql://usuario:senha_secreta@db:5432/meubanco"
+---
+# 4. O Serviço da API (Para liberar acesso externo)
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentinel-service
+spec:
+  selector:
+    app: sentinel
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+      nodePort: 30000
